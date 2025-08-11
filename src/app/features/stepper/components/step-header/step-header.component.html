@@ -1,0 +1,12 @@
+<!-- features/stepper/components/step-header/step-header.component.html -->
+<header class="header">
+    <div>
+      <h1>Project Setup</h1>
+      <p>Select apps → fill details → review → submit</p>
+    </div>
+    <div class="actions">
+      <button type="button" (click)="cancel()">Cancel</button>
+      <button type="button" [disabled]="!stepper.areAllAppStepsComplete()" (click)="submit()">Submit</button>
+    </div>
+  </header>
+  

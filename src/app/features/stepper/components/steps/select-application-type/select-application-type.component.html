@@ -1,0 +1,9 @@
+<!-- select-application-type.component.html -->
+<h2>Application Type</h2>
+<form [formGroup]="form">
+  <label><input type="checkbox" formControlName="web" (change)="onChange()"> Web</label>
+  <label><input type="checkbox" formControlName="mobile" (change)="onChange()"> Mobile</label>
+  <label><input type="checkbox" formControlName="desktop" (change)="onChange()"> Desktop</label>
+  <label><input type="checkbox" formControlName="wireframe" (change)="onChange()"> Wireframe</label>
+</form>
+<p class="hint">Select at least one to continue.</p>

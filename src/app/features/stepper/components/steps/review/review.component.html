@@ -1,0 +1,32 @@
+<!-- review.component.html -->
+<h2>Review & Submit</h2>
+<div *ngIf="(stepper.snapshot$ | async) as snap">
+  <div *ngFor="let app of snap.apps" class="review-block">
+    <h3>{{app.name}}
+      <small class="muted">({{app.category}})</small>
+    </h3>
+    <ul>
+      <li>
+        <strong>Info:</strong>
+        <code>{{ snap.forms['app.' + app.id + '.info']?.value | json }}</code>
+        <a (click)="edit(app.category + '/' + app.id + '/info')">Edit</a>
+      </li>
+      <li>
+        <strong>Audience:</strong>
+        <code>{{ snap.forms['app.' + app.id + '.audience']?.value | json }}</code>
+        <a (click)="edit(app.category + '/' + app.id + '/audience')">Edit</a>
+      </li>
+      <li *ngIf="snap.forms['app.' + app.id + '.audience.workforce']">
+        <strong>Workforce:</strong>
+        <code>{{ snap.forms['app.' + app.id + '.audience.workforce']?.value | json }}</code>
+        <a (click)="edit(app.category + '/' + app.id + '/audience/workforce')">Edit</a>
+      </li>
+      <li *ngIf="snap.forms['app.' + app.id + '.audience.customer']">
+        <strong>Customer:</strong>
+        <code>{{ snap.forms['app.' + app.id + '.audience.customer']?.value | json }}</code>
+        <a (click)="edit(app.category + '/' + app.id + '/audience/customer')">Edit</a>
+      </li>
+    </ul>
+  </div>
+</div>
+<p class="note">The Submit button in the header will enable once all steps are valid.</p>

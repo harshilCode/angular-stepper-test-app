@@ -1,0 +1,16 @@
+<!-- features/stepper/components/step-shell/step-shell.component.html -->
+<app-step-header></app-step-header>
+
+<div class="layout">
+  <div class="left">
+    <!-- StepShell dynamically injects the current step component here -->
+  </div>
+  <div class="right">
+    <app-summary></app-summary>
+  </div>
+</div>
+
+<app-step-nav></app-step-nav>
+
+<!-- Invisible host for the child route so the router is happy -->
+<router-outlet></router-outlet>

@@ -1,0 +1,38 @@
+<!-- features/stepper/components/summary/summary.component.html -->
+<section>
+    <h3>Summary</h3>
+    <div class="block">
+      <h4>Selected Categories</h4>
+      <ng-container *ngIf="(stepper.snapshot$ | async) as snap">
+        <div>{{ (arrayFrom(snap.selectedCategories)).join(', ') || '—' }}</div>
+  
+        <div *ngIf="snap.apps.length">
+          <h4 class="mt">Apps</h4>
+          <ul>
+            <li *ngFor="let app of snap.apps">
+              <strong>{{app.name}}</strong>
+              <div class="sub">
+                <div>
+                  <em>Info:</em>
+                  {{ snap.forms['app.' + app.id + '.info']?.value | json }}
+                </div>
+                <div>
+                  <em>Audience:</em>
+                  {{ snap.forms['app.' + app.id + '.audience']?.value | json }}
+                </div>
+                <div *ngIf="snap.forms['app.' + app.id + '.audience.workforce']">
+                  <em>Workforce:</em>
+                  {{ snap.forms['app.' + app.id + '.audience.workforce']?.value | json }}
+                </div>
+                <div *ngIf="snap.forms['app.' + app.id + '.audience.customer']">
+                  <em>Customer:</em>
+                  {{ snap.forms['app.' + app.id + '.audience.customer']?.value | json }}
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </ng-container>
+    </div>
+  </section>
+  

@@ -1,0 +1,6 @@
+<!-- features/stepper/components/step-nav/step-nav.component.html -->
+<footer class="nav">
+    <button type="button" (click)="stepper.gotoPrev()" [disabled]="!stepper.canGoPrev()">Prev</button>
+    <button type="button" (click)="stepper.gotoNext()" [disabled]="!stepper.canGoNext()">Next</button>
+  </footer>
+  

@@ -1,0 +1,14 @@
+<!-- app-audience.component.html -->
+<h2>{{appName}} — Audience</h2>
+<form [formGroup]="form">
+  <div *ngFor="let a of options">
+    <label>
+      <input
+        type="checkbox"
+        [checked]="(form.value?.audience || []).includes(a)"
+        (change)="toggle(a, $event)" />
+      {{ a | titlecase }}
+    </label>
+  </div>
+</form>
+<p class="hint">Choosing Workforce/Customer will add dedicated follow-up questions.</p>
