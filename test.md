@@ -1,94 +1,102 @@
-You are a senior frontend engineer. Please generate a minimal but realistic **Shopping Cart / Checkout** demo app using **React + TypeScript + Tailwind CSS + Vite + Vitest + React Testing Library**.
+You are a senior release engineer. In THIS repository, generate two bash scripts that will *create realistic merge conflicts* for a 10–15 minute demo, without breaking my repo permanently.
 
-### Goals
-- Small, readable codebase suitable for a live demo (10–15 min).
-- Include **UI + business logic + tests** so I can later demonstrate merge conflicts.
-- Keep dependencies lightweight: React, TypeScript, Vite, Tailwind, Vitest, @testing-library/*.
+## What I want
+- Script 1: scripts/setup_conflicts.sh
+  - Idempotent, safe, and chatty (echo steps).
+  - Creates two branches from current main (or default): 
+    - A = feature-tiered-discount 
+    - B = feature-free-shipping
+  - Introduces **three conflicts**:
+    1) **Business-logic conflict** in my cart/total logic file:
+       - Branch A adds tiered coupons: SAVE10 = 10%, SAVE15 = 15%.
+       - Branch B keeps SAVE10 = 10% and adds shipping rule: $0 if subtotal >= 50, otherwise $5.
+       - Both branches compute and export `{ subtotal, discount, shipping, total }` (TypeScript object).
+       - Include/update **unit tests** (Vitest) on each branch so the final merge requires reconciling test expectations.
+    2) **UI component conflict** in my checkout button component:
+       - Branch A renames the handler prop from `onCheckout` → `onSubmitOrder` and updates all internal references.
+       - Branch B changes the button label to **"Pay now"** but keeps the old prop name.
+       - Ensure there’s at least one usage site (e.g., in App or a container) so the rename causes a cascading change.
+    3) **Dependency version conflict** in package.json:
+       - Branch A sets `react-router-dom` to **6.26.0**
+       - Branch B sets `react-router-dom` to **6.23.1**
+       - Stage the appropriate lockfile if present.
 
-### Project Setup (automate via instructions in README)
-1) Initialize Vite React TypeScript app.
-2) Configure Tailwind (postcss.config, tailwind.config, global index.css with @tailwind base/components/utilities).
-3) Add Vitest + RTL + jsdom and set up `vite.config.ts` test env.
-4) Add ESLint + Prettier config (recommended defaults).
-5) Provide npm scripts: dev, build, preview, test, test:watch, lint, format.
+- Script 2: scripts/reset_demo.sh
+  - Resets the repo back to a clean baseline tag (e.g., v0) or, if no tag, creates one from the current clean state before changes.
+  - Deletes the demo branches if they exist.
+  - Chatty output.
 
-### App Concept
-A tiny cart with:
-- **Item list** (2–4 hardcoded products).
-- **Cart panel** showing line items, qty, subtotal.
-- **Coupon input** (supports “SAVE10” for 10% off).
-- **Shipping rule** (flat $5 shipping if subtotal < $50, else $0).
-- **Checkout button** (calls a mock API or alert).
-- Accessible, keyboard-navigable UI.
+## Repository detection & fallbacks
+Before writing the scripts, scan the repo and *auto-detect* likely file paths. If uncertain, use these **fallbacks** but inline them as configurable variables at the top of the script so I can change them:
+- CART_LOGIC_FILE (default: src/lib/cart.ts)
+- CART_TEST_FILE (default: src/lib/__tests__/cart.test.ts)
+- CHECKOUT_BUTTON_FILE (default: src/components/CheckoutButton.tsx)
+- CHECKOUT_BUTTON_USAGE_FILE (default: src/App.tsx)
+- BASELINE_TAG (default: v0)
 
-### File Structure (create these files with full code)
-- `src/lib/cart.ts`
-  - Types: `Item { id, name, price, qty }`, `CartLine`.
-  - Functions:
+If a file doesn’t exist, create it minimally and guard with comments so I can adjust later.
+
+## Script requirements
+- **Safety**:
+  - Exit on error (`set -euo pipefail`).
+  - Check for a clean working tree before making changes; abort if dirty (print a helpful message).
+  - If BASELINE_TAG doesn’t exist, create it from the current HEAD before mutating anything so I can reset easily.
+  - Back up any files you overwrite to `*.backup.<timestamp>` if they already exist and are not tracked in git.
+
+- **Git flow**:
+  - Start from default branch (prefer `main`, else `master`; detect automatically).
+  - Ensure the default branch has the baseline tag (`v0` or configured).
+  - Create/change files per-branch and commit with clear messages:
+    - A: “feat(A): tiered discounts + prop rename”
+    - B: “feat(B): free shipping + label change”
+    - A/B: “chore(A/B): bump react-router-dom to <version>”
+  - Print next steps at the end:
+    1) `git checkout feature-tiered-discount && git merge feature-free-shipping`
+    2) Open conflicted files
+    3) Run tests
+
+- **Business logic code** (TypeScript):
+  - Export types: `Item { id: string; name: string; price: number; qty: number }`
+  - Provide functions: 
     - `calcSubtotal(items: Item[]): number`
-    - `calcDiscount(subtotal: number, coupon?: string): number`  // supports "SAVE10"
-    - `calcShipping(subtotal: number): number` // $0 if >= 50, else 5
-    - `calcTotal(items: Item[], coupon?: string): { subtotal, discount, shipping, total }`
-- `src/lib/__tests__/cart.test.ts` (Vitest):
-  - Test discount for SAVE10.
-  - Test shipping threshold at 49.99 vs 50.
-  - Test combined total math and rounding.
-- `src/components/ProductList.tsx`
-  - Props: `products: Item[]`, `onAdd(item: Item)`
-  - Renders product cards with “Add to cart”.
-  - A11y: proper button labels and roles.
-- `src/components/CartPanel.tsx`
-  - Props: `items: Item[]`, `onChangeQty(id, qty)`, `onRemove(id)`, `coupon`, `onCouponChange`
-  - Shows line items, per-line subtotal, subtotal/discount/shipping/total summary (uses lib functions).
-  - Validates coupon on the fly (simple hint text).
-- `src/components/CheckoutButton.tsx`
-  - Props: `{ onCheckout: () => void; disabled?: boolean }`
-  - Button text “Checkout”.
-  - aria-label="Checkout"
-- `src/App.tsx`
-  - Holds state: `items`, `cart` (array of items with qty), `coupon`.
-  - Preloads **2–4 products** (e.g., “T-Shirt $20”, “Mug $15”…).
-  - Integrates `ProductList`, `CartPanel`, `CheckoutButton`.
-  - `onCheckout` triggers a mock API call (Promise timeout) and shows success/failure toast or alert.
-- `src/styles/tokens.css` (optional): basic Tailwind utilities or custom classes for spacing/typography (keep it minimal).
-- `src/index.css`: Tailwind directives, base styles.
-- `README.md`:
-  - Clear setup steps (npm i / npm run dev).
-  - How to run tests.
-  - Brief architecture notes.
+    - `calcDiscount(subtotal: number, coupon?: string): number`
+    - `calcShipping(subtotal: number): number`
+    - `calcTotal(items: Item[], coupon?: string): { subtotal: number; discount: number; shipping: number; total: number }`
+  - Keep math to two decimals and deterministic.
 
-### Tailwind Styling
-- Use simple, readable Tailwind classes (container, grid, gap, rounded, shadow, focus-visible).
-- Ensure buttons have focus styles and sufficient color contrast.
+- **Unit tests** (Vitest):
+  - On A: include tests covering SAVE15 at 15% and shipping threshold behavior.
+  - On B: include tests covering SAVE10 at 10% and shipping threshold behavior.
+  - After merging, these will need reconciliation.
 
-### Testing Requirements
-- Unit tests for `cart.ts` math (edge cases: empty cart, big numbers, rounding).
-- Component tests (RTL):
-  - `ProductList` renders items and fires `onAdd`.
-  - `CartPanel` updates totals when qty changes; shows discount when coupon SAVE10 is entered; shows shipping correctly below/above $50.
-  - `CheckoutButton` calls handler and respects `disabled`.
-- Keep tests fast and deterministic, no network.
+- **UI component** (React TSX):
+  - The checkout button component must export a named component: `CheckoutButton`.
+  - Branch A prop name: `{ onSubmitOrder: () => void; disabled?: boolean }`, label text “Checkout”.
+  - Branch B prop name: `{ onCheckout: () => void; disabled?: boolean }`, label text “Pay now”.
+  - Ensure `CHECKOUT_BUTTON_USAGE_FILE` renders the button with whichever prop exists on that branch so the merge produces a conflict in both the component and the usage.
 
-### Accessibility
-- Labels for inputs (coupon input with <label>).
-- Buttons with `aria-label` where text may be ambiguous.
-- Keyboard focus rings visible.
+- **Dependency conflict**:
+  - Modify package.json and add the lockfile if present (`package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`) on each branch accordingly.
+  - Do NOT run the dev server; keep scripts quick.
 
-### Nice-to-Have (if time permits)
-- Utility currency formatter.
-- Basic empty-state messages for the cart.
-- A small toast helper for checkout success.
+- **Idempotency**:
+  - If branches already exist, recreate them from baseline.
+  - If files already contain the intended content, skip re-writing.
 
-### Output Format
-- Please generate:
-  1) All source files with complete code (TypeScript).
-  2) Tailwind/PostCSS/Vite/Vitest config files.
-  3) A README with setup, run, and test instructions.
-- Use clear comments (1–2 lines) at top of each file describing its purpose.
+- **Ergonomics**:
+  - At the top of `setup_conflicts.sh`, declare and echo the configurable variables:
+    - DEFAULT_BRANCH
+    - BASELINE_TAG
+    - CART_LOGIC_FILE
+    - CART_TEST_FILE
+    - CHECKOUT_BUTTON_FILE
+    - CHECKOUT_BUTTON_USAGE_FILE
+  - Print a summary table of what got created/modified and where to look for conflicts.
 
-### Acceptance Criteria
-- `npm run dev` starts the app and shows product list + cart panel.
-- Entering `SAVE10` visibly reduces the total by 10%.
-- Shipping switches from $5 to $0 at subtotal >= $50.
-- `npm test` passes with unit and component tests.
-- Code is small, clean, and ready for a live demo.
+## Deliverables
+1) Create/overwrite: `scripts/setup_conflicts.sh` and `scripts/reset_demo.sh` with executable shebangs.
+2) Ensure both scripts are formatted, commented (what/why), and runnable as:
+   - `bash scripts/setup_conflicts.sh`
+   - `bash scripts/reset_demo.sh`
+
+After generating the scripts, show me their full contents in code blocks. Do not run them.
