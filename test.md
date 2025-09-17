@@ -1,102 +1,45 @@
-You are a senior release engineer. In THIS repository, generate two bash scripts that will *create realistic merge conflicts* for a 10–15 minute demo, without breaking my repo permanently.
+Act as a repo analyst. We have a merge conflict in src/lib/cart.ts inside `calcDiscount(subtotal: number, coupon?: string)`. 
+HEAD supports SAVE10 and SAVE15. Incoming branch supports only SAVE10.
 
-## What I want
-- Script 1: scripts/setup_conflicts.sh
-  - Idempotent, safe, and chatty (echo steps).
-  - Creates two branches from current main (or default): 
-    - A = feature-tiered-discount 
-    - B = feature-free-shipping
-  - Introduces **three conflicts**:
-    1) **Business-logic conflict** in my cart/total logic file:
-       - Branch A adds tiered coupons: SAVE10 = 10%, SAVE15 = 15%.
-       - Branch B keeps SAVE10 = 10% and adds shipping rule: $0 if subtotal >= 50, otherwise $5.
-       - Both branches compute and export `{ subtotal, discount, shipping, total }` (TypeScript object).
-       - Include/update **unit tests** (Vitest) on each branch so the final merge requires reconciling test expectations.
-    2) **UI component conflict** in my checkout button component:
-       - Branch A renames the handler prop from `onCheckout` → `onSubmitOrder` and updates all internal references.
-       - Branch B changes the button label to **"Pay now"** but keeps the old prop name.
-       - Ensure there’s at least one usage site (e.g., in App or a container) so the rename causes a cascading change.
-    3) **Dependency version conflict** in package.json:
-       - Branch A sets `react-router-dom` to **6.26.0**
-       - Branch B sets `react-router-dom` to **6.23.1**
-       - Stage the appropriate lockfile if present.
+Do the following WITHOUT editing files:
+1) Summarize precisely what each side does (return values for SAVE10/SAVE15/undefined).
+2) Find all call sites of `calcDiscount` and `calcTotal` across src/** (list file paths + line numbers + how `coupon` is supplied).
+3) Identify any UI that surfaces coupons (inputs, labels, messages) and any validation that assumes SAVE10 only.
+4) Predict whether unit/integration tests will fail if we accept **incoming changes** (SAVE10 only). Name the tests and why.
+5) Recommend a direction: keep both SAVE10 and SAVE15 OR keep only SAVE10. Include rationale tied to callers/tests.
+6) Provide a Confidence (0–100%) and explain the basis (sample size, proximity to cart code, test coverage).
 
-- Script 2: scripts/reset_demo.sh
-  - Resets the repo back to a clean baseline tag (e.g., v0) or, if no tag, creates one from the current clean state before changes.
-  - Deletes the demo branches if they exist.
-  - Chatty output.
 
-## Repository detection & fallbacks
-Before writing the scripts, scan the repo and *auto-detect* likely file paths. If uncertain, use these **fallbacks** but inline them as configurable variables at the top of the script so I can change them:
-- CART_LOGIC_FILE (default: src/lib/cart.ts)
-- CART_TEST_FILE (default: src/lib/__tests__/cart.test.ts)
-- CHECKOUT_BUTTON_FILE (default: src/components/CheckoutButton.tsx)
-- CHECKOUT_BUTTON_USAGE_FILE (default: src/App.tsx)
-- BASELINE_TAG (default: v0)
 
-If a file doesn’t exist, create it minimally and guard with comments so I can adjust later.
 
-## Script requirements
-- **Safety**:
-  - Exit on error (`set -euo pipefail`).
-  - Check for a clean working tree before making changes; abort if dirty (print a helpful message).
-  - If BASELINE_TAG doesn’t exist, create it from the current HEAD before mutating anything so I can reset easily.
-  - Back up any files you overwrite to `*.backup.<timestamp>` if they already exist and are not tracked in git.
 
-- **Git flow**:
-  - Start from default branch (prefer `main`, else `master`; detect automatically).
-  - Ensure the default branch has the baseline tag (`v0` or configured).
-  - Create/change files per-branch and commit with clear messages:
-    - A: “feat(A): tiered discounts + prop rename”
-    - B: “feat(B): free shipping + label change”
-    - A/B: “chore(A/B): bump react-router-dom to <version>”
-  - Print next steps at the end:
-    1) `git checkout feature-tiered-discount && git merge feature-free-shipping`
-    2) Open conflicted files
-    3) Run tests
+propose merge inplementation
+Based on your analysis, propose a merged `calcDiscount` that:
+- Supports both "SAVE10" (10%) and "SAVE15" (15%).
+- Is explicit, readable, and typed.
+- Handles unknown coupon strings by returning 0.
+- Keeps rounding deterministic (two decimals handled by the caller `calcTotal`).
+Return ONLY a patch for src/lib/cart.ts that updates `calcDiscount` and, if needed, adjusts `calcTotal` comments. Include one-line comments explaining the rules. End the patch with a brief commit message and Confidence (0–100%) + rationale.
 
-- **Business logic code** (TypeScript):
-  - Export types: `Item { id: string; name: string; price: number; qty: number }`
-  - Provide functions: 
-    - `calcSubtotal(items: Item[]): number`
-    - `calcDiscount(subtotal: number, coupon?: string): number`
-    - `calcShipping(subtotal: number): number`
-    - `calcTotal(items: Item[], coupon?: string): { subtotal: number; discount: number; shipping: number; total: number }`
-  - Keep math to two decimals and deterministic.
 
-- **Unit tests** (Vitest):
-  - On A: include tests covering SAVE15 at 15% and shipping threshold behavior.
-  - On B: include tests covering SAVE10 at 10% and shipping threshold behavior.
-  - After merging, these will need reconciliation.
 
-- **UI component** (React TSX):
-  - The checkout button component must export a named component: `CheckoutButton`.
-  - Branch A prop name: `{ onSubmitOrder: () => void; disabled?: boolean }`, label text “Checkout”.
-  - Branch B prop name: `{ onCheckout: () => void; disabled?: boolean }`, label text “Pay now”.
-  - Ensure `CHECKOUT_BUTTON_USAGE_FILE` renders the button with whichever prop exists on that branch so the merge produces a conflict in both the component and the usage.
 
-- **Dependency conflict**:
-  - Modify package.json and add the lockfile if present (`package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`) on each branch accordingly.
-  - Do NOT run the dev server; keep scripts quick.
 
-- **Idempotency**:
-  - If branches already exist, recreate them from baseline.
-  - If files already contain the intended content, skip re-writing.
 
-- **Ergonomics**:
-  - At the top of `setup_conflicts.sh`, declare and echo the configurable variables:
-    - DEFAULT_BRANCH
-    - BASELINE_TAG
-    - CART_LOGIC_FILE
-    - CART_TEST_FILE
-    - CHECKOUT_BUTTON_FILE
-    - CHECKOUT_BUTTON_USAGE_FILE
-  - Print a summary table of what got created/modified and where to look for conflicts.
 
-## Deliverables
-1) Create/overwrite: `scripts/setup_conflicts.sh` and `scripts/reset_demo.sh` with executable shebangs.
-2) Ensure both scripts are formatted, commented (what/why), and runnable as:
-   - `bash scripts/setup_conflicts.sh`
-   - `bash scripts/reset_demo.sh`
+if we take incoming only what breaks:
+Thought experiment: If we accept **incoming changes** (SAVE10 only) and discard SAVE15, enumerate:
+- Which tests break (names + reasons)
+- Which UI/validation texts become wrong
+- Any analytics or pricing reports that would be impacted (search for "SAVE15" occurrences)
+Provide a bullet list and a short “risk matrix” (Impact: High/Med/Low, Likelihood: High/Med/Low). 
+End with a recommendation and Confidence (0–100%).
 
-After generating the scripts, show me their full contents in code blocks. Do not run them.
+
+post merge sanity check
+Post-merge checklist for coupons and totals:
+- Re-scan for any references that still assume SAVE10 only.
+- Confirm that UI copy, validation, and tests now align.
+- Confirm that currency formatting and rounding remain consistent through `calcTotal`.
+- Confirm no dead code/comment drift remains.
+Produce a concise checklist with ✅/❌ and file paths. Include Confidence (0–100%).
